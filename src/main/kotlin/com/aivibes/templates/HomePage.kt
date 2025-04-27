@@ -7,8 +7,13 @@ import kotlinx.html.*
 class HomePage(val articles: List<Article>) : Template<HTML> {
     override fun HTML.apply() {
         head {
-            title { +"AI Vibe News" }
+            title { +"vibeai.news" }
             meta { name = "viewport"; content = "width=device-width, initial-scale=1.0" }
+            link {
+                rel = "icon"
+                type = "image/svg+xml"
+                href = "static/favicon.svg"
+            }
             link {
                 rel = "stylesheet"
                 href = "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
@@ -17,14 +22,37 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
                 rel = "stylesheet"
                 href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
             }
+            style {
+                +"""
+                    .logo-text {
+                        color: #1E40AF;
+                        font-weight: 700;
+                    }
+                    .logo-icon {
+                        background: linear-gradient(135deg, #1E40AF 0%, #EA580C 100%);
+                        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h10v4H7V7zm0 6h10v4H7v-4z'/%3E%3C/svg%3E") no-repeat center;
+                        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h10v4H7V7zm0 6h10v4H7v-4z'/%3E%3C/svg%3E") no-repeat center;
+                    }
+                    .accent-text {
+                        color: #EA580C;
+                    }
+                """
+            }
         }
         body {
             div(classes = "min-h-screen bg-gray-50") {
                 // Header
-                header(classes = "bg-blue-600 text-white shadow-md") {
-                    div(classes = "container mx-auto px-4 py-8 text-center") {
-                        h1(classes = "text-4xl font-bold mb-2") { +"AI Vibe News" }
-                        p(classes = "text-xl opacity-90") { +"Daily Insights into AI and Vibe Coding" }
+                header(classes = "bg-white text-white shadow-md") {
+                    div(classes = "container mx-auto px-4 py-6") {
+                        div(classes = "flex items-center justify-center space-x-4") {
+                            div(classes = "logo-icon w-10 h-10") {}
+                            h1(classes = "text-4xl font-bold") {
+                                span(classes = "logo-text") { +"vibe" }
+                                span(classes = "accent-text") { +"ai" }
+                                span(classes = "logo-text") { +".news" }
+                            }
+                        }
+                        p(classes = "text-center text-gray-600 mt-2 text-xl") { +"Your Daily AI News Hub" }
                     }
                 }
 
@@ -54,6 +82,8 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
                                             span { +"By ${article.author}" }
                                             span { +"•" }
                                             span { +article.source }
+                                            span { +"•" }
+                                            span(classes = "text-blue-600") { +article.getFormattedPublishedTime() }
                                         }
                                         p(classes = "text-gray-700 mb-4 line-clamp-3") { +article.content.take(200).plus("...") }
                                         div(classes = "flex flex-wrap gap-2") {
@@ -71,7 +101,10 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
                 // Footer
                 footer(classes = "bg-gray-800 text-white py-8 mt-12") {
                     div(classes = "container mx-auto px-4 text-center") {
-                        p(classes = "text-sm") { +"© 2024 AI Vibe News. All rights reserved." }
+                        div(classes = "flex items-center justify-center space-x-2 mb-4") {
+                            div(classes = "logo-icon w-6 h-6") {}
+                            p(classes = "text-sm") { +"© 2024 vibeai.news. All rights reserved." }
+                        }
                         div(classes = "flex justify-center gap-4 mt-4") {
                             a(classes = "text-gray-400 hover:text-white transition-colors", href = "#") {
                                 i(classes = "fab fa-github text-xl")
