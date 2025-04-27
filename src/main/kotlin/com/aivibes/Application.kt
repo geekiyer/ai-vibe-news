@@ -3,7 +3,6 @@ package com.aivibes
 import com.aivibes.database.DatabaseFactory
 import com.aivibes.routes.articleRoutes
 import com.aivibes.services.ArticleService
-import com.aivibes.templates.ArticleDetailPage
 import com.aivibes.templates.HomePage
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
@@ -11,7 +10,6 @@ import io.ktor.server.engine.*
 import io.ktor.server.html.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
-import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -33,25 +31,6 @@ fun Application.configureRouting(database: DatabaseFactory, articleService: Arti
             val articles = runBlocking { articleService.fetchLatestArticles() }
             call.respondHtmlTemplate(HomePage(articles)) {}
         }
-        
-        get("/article/{id}") {
-            val id = call.parameters["id"]?.toIntOrNull()
-            if (id == null) {
-                call.respondRedirect("/")
-                return@get
-            }
-            
-            val articles = runBlocking { articleService.fetchLatestArticles() }
-            val article = articles.find { it.id == id }
-            
-            if (article == null) {
-                call.respondRedirect("/")
-                return@get
-            }
-            
-            call.respondHtmlTemplate(ArticleDetailPage(article)) {}
-        }
-        
         articleRoutes(database)
     }
 }

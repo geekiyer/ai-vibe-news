@@ -6,8 +6,10 @@ import io.ktor.client.call.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
-import io.ktor.client.statement.*
 import io.ktor.serialization.kotlinx.json.*
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.json.Json
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -23,41 +25,71 @@ class ArticleService {
     }
 
     suspend fun fetchLatestArticles(): List<Article> {
-        println("Starting to fetch latest articles...")
-        val articles = mutableListOf<Article>()
+        println("\n=== Starting Article Fetch ===")
         
-        // Fetch from Hacker News API
-        println("Fetching Hacker News articles...")
-        val hackerNewsArticles = fetchHackerNewsArticles()
-        println("Found ${hackerNewsArticles.size} Hacker News articles")
-        articles.addAll(hackerNewsArticles)
-
-        // Fetch from Dev.to API
-        println("Fetching Dev.to articles...")
-        val devToArticles = fetchDevToArticles()
-        println("Found ${devToArticles.size} Dev.to articles")
-        articles.addAll(devToArticles)
-
-        println("Total articles fetched: ${articles.size}")
-        println("Article titles: ${articles.map { it.title }}")
-        // Normalize and sort articles by date
-        return articles.sortedByDescending { it.publishedAt }
+        return coroutineScope {
+            val articles = mutableListOf<Article>()
+            
+            // Launch all fetches in parallel
+            val hackerNewsDeferred = async { 
+                try {
+                    val hackernewsArticles = fetchHackerNewsArticles()
+                    println("✓ Hacker News: ${hackernewsArticles.size} articles")
+                    hackernewsArticles
+                } catch (e: Exception) {
+                    println("✗ Error fetching Hacker News articles: ${e.message}")
+                    emptyList()
+                }
+            }
+            
+            val devToDeferred = async {
+                try {
+                    val devToArticles = fetchDevToArticles()
+                    println("✓ Dev.to: ${devToArticles.size} articles")
+                    devToArticles
+                } catch (e: Exception) {
+                    println("✗ Error fetching Dev.to articles: ${e.message}")
+                    emptyList()
+                }
+            }
+            
+            val redditDeferred = async {
+                try {
+                    val redditArticles = fetchRedditArticles()
+                    println("✓ Reddit: ${redditArticles.size} articles")
+                    redditArticles
+                } catch (e: Exception) {
+                    println("✗ Error fetching Reddit articles: ${e.message}")
+                    emptyList()
+                }
+            }
+            
+            val mediumDeferred = async {
+                try {
+                    val mediumArticles = fetchMediumArticles()
+                    println("✓ Medium: ${mediumArticles.size} articles")
+                    mediumArticles
+                } catch (e: Exception) {
+                    println("✗ Error fetching Medium articles: ${e.message}")
+                    emptyList()
+                }
+            }
+            
+            // Wait for all fetches to complete and combine results
+            val results = awaitAll(hackerNewsDeferred, devToDeferred, redditDeferred, mediumDeferred)
+            articles.addAll(results.flatten())
+            
+            println("=== Total Articles: ${articles.size} ===\n")
+            articles.sortedByDescending { it.publishedAt }
+        }
     }
 
     private suspend fun fetchHackerNewsArticles(): List<Article> {
         return try {
-            println("Fetching Hacker News top stories...")
-            val storyIds = client.get("https://hacker-news.firebaseio.com/v0/topstories.json")
-            println("Hacker News response status: ${storyIds.status}")
-            println("Hacker News response: ${storyIds.bodyAsText()}")
+            val storyIds = client.get("https://hacker-news.firebaseio.com/v0/topstories.json").body<List<Int>>()
             
-            val ids = storyIds.body<List<Int>>()
-            println("Found ${ids.size} story IDs")
-            
-            ids.take(10).mapNotNull { storyId ->
-                println("Fetching Hacker News story $storyId...")
+            storyIds.take(15).mapNotNull { storyId ->
                 val story = client.get("https://hacker-news.firebaseio.com/v0/item/$storyId.json").body<HackerNewsStory>()
-                println("Story $storyId response: $story")
                 
                 if (story.title.contains("AI", ignoreCase = true) || 
                     story.title.contains("vibe", ignoreCase = true) ||
@@ -69,28 +101,25 @@ class ArticleService {
                         publishedAt = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME),
                         source = "Hacker News",
                         tags = listOf("AI", "Technology"),
-                        imageUrl = "https://picsum.photos/800/400?random=$storyId"
+                        imageUrl = "https://picsum.photos/800/400?random=$storyId",
+                        url = story.url
                     )
                 } else {
-                    println("Story $storyId doesn't match keywords")
                     null
                 }
             }
         } catch (e: Exception) {
-            println("Error fetching Hacker News articles: ${e.message}")
-            println("Stack trace:")
-            e.printStackTrace()
+            println("Error in fetchHackerNewsArticles: ${e.message}")
             emptyList()
         }
     }
 
     private suspend fun fetchDevToArticles(): List<Article> {
         return try {
-            println("Fetching Dev.to articles...")
             val response = client.get("https://dev.to/api/articles") {
                 url {
                     parameters.append("tag", "ai")
-                    parameters.append("per_page", "10")
+                    parameters.append("per_page", "15")
                 }
                 headers {
                     append("Accept", "application/json")
@@ -98,14 +127,7 @@ class ArticleService {
                 }
             }
             
-            println("Dev.to request URL: ${response.request.url}")
-            println("Dev.to request headers: ${response.request.headers}")
-            println("Dev.to response status: ${response.status}")
-            val responseBody = response.bodyAsText()
-            println("Dev.to response body: $responseBody")
-            
             val articles = response.body<List<DevToArticle>>()
-            println("Parsed Dev.to articles: $articles")
             
             articles.map { devToArticle ->
                 val content = devToArticle.body_markdown ?: devToArticle.description ?: "No content available"
@@ -116,19 +138,172 @@ class ArticleService {
                     publishedAt = devToArticle.published_at,
                     source = "Dev.to",
                     tags = devToArticle.tag_list,
-                    imageUrl = devToArticle.cover_image ?: "https://picsum.photos/800/400?random=${devToArticle.title.hashCode()}"
+                    imageUrl = devToArticle.cover_image ?: "https://picsum.photos/800/400?random=${devToArticle.title.hashCode()}",
+                    url = "https://dev.to${devToArticle.path}"
                 )
             }
         } catch (e: Exception) {
-            println("Error fetching Dev.to articles: ${e.message}")
-            println("Stack trace:")
+            println("Error in fetchDevToArticles: ${e.message}")
+            emptyList()
+        }
+    }
+
+    private suspend fun fetchRedditArticles(): List<Article> {
+        return try {
+            println("Starting Reddit fetch...")
+            val response = client.get("https://www.reddit.com/r/artificial/top.json") {
+                url {
+                    parameters.append("limit", "15")
+                    parameters.append("t", "day") // Get top posts from today
+                }
+                headers {
+                    append("User-Agent", "AI-Vibe-News/1.0")
+                }
+            }
+            
+            val redditResponse = response.body<RedditResponse>()
+            println("Raw Reddit response: ${redditResponse.data.children.size} posts found")
+            
+            val articles = redditResponse.data.children.mapNotNull { post ->
+                try {
+                    val content = post.data.selftext.takeIf { it.isNotBlank() } ?: post.data.title
+                    if (content.isBlank()) {
+                        println("Skipping post '${post.data.title}' - empty content")
+                        return@mapNotNull null
+                    }
+
+                    val imageUrl = when {
+                        post.data.thumbnail.startsWith("http") -> {
+                            println("Using thumbnail URL for '${post.data.title}': ${post.data.thumbnail}")
+                            post.data.thumbnail
+                        }
+                        post.data.url?.endsWith(".jpg") == true || post.data.url?.endsWith(".png") == true -> {
+                            println("Using post URL as image for '${post.data.title}': ${post.data.url}")
+                            post.data.url
+                        }
+                        else -> {
+                            println("Using fallback image for '${post.data.title}'")
+                            "https://picsum.photos/800/400?random=${post.data.id}"
+                        }
+                    }
+                    
+                    Article(
+                        title = post.data.title,
+                        content = content,
+                        author = post.data.author,
+                        publishedAt = LocalDateTime.ofEpochSecond(post.data.created_utc.toLong(), 0, java.time.ZoneOffset.UTC)
+                            .format(DateTimeFormatter.ISO_DATE_TIME),
+                        source = "Reddit r/artificial",
+                        tags = listOf("AI", "Reddit"),
+                        imageUrl = imageUrl,
+                        url = "https://reddit.com${post.data.permalink}"
+                    )
+                } catch (e: Exception) {
+                    println("Error processing Reddit post '${post.data.title}': ${e.message}")
+                    null
+                }
+            }
+            println("Successfully processed ${articles.size} Reddit articles (${redditResponse.data.children.size - articles.size} filtered out)")
+            articles
+        } catch (e: Exception) {
+            println("Error in fetchRedditArticles: ${e.message}")
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+
+    private suspend fun fetchMediumArticles(): List<Article> {
+        return try {
+            println("Starting Medium fetch...")
+            val response = client.get("https://medium.com/feed/tag/artificial-intelligence") {
+                headers {
+                    append("User-Agent", "AI-Vibe-News/1.0")
+                }
+            }
+            
+            val rssContent = response.body<String>()
+            println("Medium RSS content received: ${rssContent.length} characters")
+            
+            // Parse the RSS content manually
+            val items = mutableListOf<MediumItem>()
+            val itemRegex = Regex("<item>(.*?)</item>", RegexOption.DOT_MATCHES_ALL)
+            val titleRegex = Regex("<title>(?:<!\\[CDATA\\[)?(.*?)(?:]]>)?</title>")
+            val descriptionRegex = Regex("<description>(?:<!\\[CDATA\\[)?(.*?)(?:]]>)?</description>")
+            val authorRegex = Regex("<dc:creator>(?:<!\\[CDATA\\[)?(.*?)(?:]]>)?</dc:creator>")
+            val pubDateRegex = Regex("<pubDate>(.*?)</pubDate>")
+            val linkRegex = Regex("<link>(.*?)</link>")
+            val guidRegex = Regex("<guid>(.*?)</guid>")
+            val imageRegex = Regex("<img[^>]+src=\"([^\">]+)\"")
+            
+            itemRegex.findAll(rssContent).forEach { match ->
+                val itemContent = match.groupValues[1]
+                val title = titleRegex.find(itemContent)?.groupValues?.get(1)?.trim() ?: "Untitled"
+                val description = descriptionRegex.find(itemContent)?.groupValues?.get(1)?.trim() ?: ""
+                val author = authorRegex.find(itemContent)?.groupValues?.get(1)?.trim() ?: "Unknown Author"
+                val pubDate = pubDateRegex.find(itemContent)?.groupValues?.get(1)?.trim() ?: ""
+                val link = linkRegex.find(itemContent)?.groupValues?.get(1)?.trim() ?: ""
+                val guid = guidRegex.find(itemContent)?.groupValues?.get(1)?.trim() ?: ""
+                
+                // Extract image from description
+                val imageUrl = imageRegex.find(description)?.groupValues?.get(1)
+                
+                // Clean up HTML tags from description
+                val cleanDescription = description
+                    .replace(Regex("<[^>]+>"), "") // Remove HTML tags
+                    .replace(Regex("&[^;]+;"), "") // Remove HTML entities
+                    .trim()
+                
+                items.add(MediumItem(
+                    title = title,
+                    description = cleanDescription,
+                    author = author,
+                    pubDate = pubDate,
+                    link = link,
+                    thumbnail = imageUrl,
+                    guid = guid
+                ))
+            }
+            
+            println("Found ${items.size} Medium articles in RSS feed")
+            
+            val articles = items.mapNotNull { item ->
+                try {
+                    println("Processing Medium article: ${item.title}")
+                    val content = item.description.takeIf { it.isNotBlank() } ?: item.title
+                    
+                    // Generate a more varied fallback image based on the article's title
+                    val fallbackImage = when {
+                        item.title.contains("AI", ignoreCase = true) -> "https://picsum.photos/800/400?random=ai${item.guid}"
+                        item.title.contains("Machine Learning", ignoreCase = true) -> "https://picsum.photos/800/400?random=ml${item.guid}"
+                        item.title.contains("Deep Learning", ignoreCase = true) -> "https://picsum.photos/800/400?random=dl${item.guid}"
+                        else -> "https://picsum.photos/800/400?random=${item.guid}"
+                    }
+                    
+                    Article(
+                        title = item.title,
+                        content = content,
+                        author = item.author,
+                        publishedAt = item.pubDate,
+                        source = "Medium",
+                        tags = listOf("AI", "Medium"),
+                        imageUrl = item.thumbnail ?: fallbackImage,
+                        url = item.link
+                    )
+                } catch (e: Exception) {
+                    println("Error processing Medium article: ${e.message}")
+                    null
+                }
+            }
+            println("Successfully processed ${articles.size} Medium articles")
+            articles
+        } catch (e: Exception) {
+            println("Error in fetchMediumArticles: ${e.message}")
             e.printStackTrace()
             emptyList()
         }
     }
 }
 
-// Data classes for API responses
 @kotlinx.serialization.Serializable
 private data class HackerNewsStory(
     val id: Int,
@@ -146,10 +321,49 @@ private data class DevToArticle(
     val published_at: String,
     val user: DevToUser,
     val tag_list: List<String>,
-    val cover_image: String? = null
+    val cover_image: String? = null,
+    val path: String
 )
 
 @kotlinx.serialization.Serializable
 private data class DevToUser(
     val name: String
+)
+
+@kotlinx.serialization.Serializable
+private data class RedditResponse(
+    val data: RedditData
+)
+
+@kotlinx.serialization.Serializable
+private data class RedditData(
+    val children: List<RedditPost>
+)
+
+@kotlinx.serialization.Serializable
+private data class RedditPost(
+    val data: RedditPostData
+)
+
+@kotlinx.serialization.Serializable
+private data class RedditPostData(
+    val id: String,
+    val title: String,
+    val selftext: String,
+    val author: String,
+    val created_utc: Double,
+    val permalink: String,
+    val thumbnail: String,
+    val url: String? = null
+)
+
+@kotlinx.serialization.Serializable
+private data class MediumItem(
+    val title: String,
+    val description: String,
+    val author: String,
+    val pubDate: String,
+    val link: String,
+    val thumbnail: String?,
+    val guid: String
 ) 
