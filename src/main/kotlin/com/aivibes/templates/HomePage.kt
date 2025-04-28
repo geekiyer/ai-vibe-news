@@ -7,12 +7,12 @@ import kotlinx.html.*
 class HomePage(val articles: List<Article>) : Template<HTML> {
     override fun HTML.apply() {
         head {
-            title { +"vibeai.news" }
+            title { +"vibeai.news - Your Daily AI News Hub" }
             meta { name = "viewport"; content = "width=device-width, initial-scale=1.0" }
             link {
                 rel = "icon"
                 type = "image/svg+xml"
-                href = "static/favicon.svg"
+                href = "/static/favicon.svg"
             }
             link {
                 rel = "stylesheet"

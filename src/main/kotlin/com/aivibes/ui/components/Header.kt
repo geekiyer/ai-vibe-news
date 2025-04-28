@@ -4,7 +4,7 @@ import kotlinx.html.*
 
 fun HTML.headerComponent() {
     head {
-        title { +"AI Vibe News" }
+        title { +"vibeai.news" }
         meta { name = "viewport"; content = "width=device-width, initial-scale=1.0" }
         link { 
             rel = "stylesheet"; 

@@ -1,9 +1,9 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.9.22"
+    kotlin("jvm") version "2.1.20"
     id("io.ktor.plugin") version "2.3.8"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.22"
+    id("org.jetbrains.kotlin.plugin.serialization") version "2.1.20"
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
@@ -33,7 +33,7 @@ dependencies {
     implementation("io.ktor:ktor-server-caching-headers-jvm:2.3.8")
     implementation("com.h2database:h2:2.2.224")
     testImplementation("io.ktor:ktor-server-tests-jvm")
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.9.22")
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.1.20")
 }
 
 application {
@@ -55,7 +55,7 @@ tasks {
                 "Main-Class" to "com.aivibes.ApplicationKt"
             )
         }
-        archiveBaseName.set("vibeai-news")
+        archiveBaseName.set("ai-vibe-news")
         archiveVersion.set("")
         archiveClassifier.set("")
     }

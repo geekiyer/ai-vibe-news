@@ -8,12 +8,16 @@ import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.html.*
+import io.ktor.server.http.content.*
 import io.ktor.server.netty.*
+import io.ktor.server.plugins.cachingheaders.*
+import io.ktor.server.plugins.compression.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
+import java.io.File
 
 fun main() {
     val database = DatabaseFactory()
@@ -27,7 +31,18 @@ fun main() {
 }
 
 fun Application.configureRouting(database: DatabaseFactory, articleService: ArticleService) {
+    install(Compression)
+    install(CachingHeaders)
+    
     routing {
+        staticResources("/static", "static")
+        
+        get("/favicon.svg") {
+            val resource = javaClass.classLoader.getResource("static/favicon.svg")
+                ?: throw Exception("Favicon not found")
+            call.respondFile(File(resource.file))
+        }
+        
         get("/health") {
             call.respond(mapOf(
                 "status" to "healthy",
@@ -35,10 +50,12 @@ fun Application.configureRouting(database: DatabaseFactory, articleService: Arti
                 "timestamp" to System.currentTimeMillis()
             ))
         }
+        
         get("/") {
             val articles = runBlocking { articleService.fetchLatestArticles() }
             call.respondHtmlTemplate(HomePage(articles)) {}
         }
+        
         articleRoutes(database)
     }
 }
