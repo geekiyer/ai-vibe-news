@@ -10,9 +10,12 @@ import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 class ArticleService {
     private val client = HttpClient(CIO) {
@@ -22,6 +25,36 @@ class ArticleService {
                 isLenient = true
             })
         }
+    }
+
+    // Rate limiting for Reddit API
+    private val redditRequestCount = AtomicInteger(0)
+    private val lastRedditRequestTime = ConcurrentHashMap<String, Long>()
+    private val REDDIT_RATE_LIMIT = 10 // requests per minute
+    private val REDDIT_WINDOW_MS = 60_000L // 1 minute in milliseconds
+
+    private suspend fun checkRedditRateLimit() {
+        val currentTime = System.currentTimeMillis()
+        val lastRequestTime = lastRedditRequestTime.getOrDefault("reddit", 0L)
+        
+        // Reset counter if window has passed
+        if (currentTime - lastRequestTime > REDDIT_WINDOW_MS) {
+            redditRequestCount.set(0)
+        }
+        
+        // Check if we've hit the rate limit
+        if (redditRequestCount.get() >= REDDIT_RATE_LIMIT) {
+            val timeToWait = REDDIT_WINDOW_MS - (currentTime - lastRequestTime)
+            if (timeToWait > 0) {
+                println("Rate limit reached. Waiting ${timeToWait/1000} seconds...")
+                delay(timeToWait)
+                redditRequestCount.set(0)
+            }
+        }
+        
+        // Update request count and timestamp
+        redditRequestCount.incrementAndGet()
+        lastRedditRequestTime["reddit"] = currentTime
     }
 
     suspend fun fetchLatestArticles(): List<Article> {
@@ -151,13 +184,17 @@ class ArticleService {
     private suspend fun fetchRedditArticles(): List<Article> {
         return try {
             println("Starting Reddit fetch...")
-            val response = client.get("https://www.reddit.com/r/artificial/top.json") {
+            checkRedditRateLimit() // Check rate limit before making request
+            
+            val response = client.get("https://www.reddit.com/r/artificialinteligence/top.json") {
                 url {
                     parameters.append("limit", "15")
                     parameters.append("t", "day") // Get top posts from today
                 }
                 headers {
-                    append("User-Agent", "AI-Vibe-News/1.0")
+                    append("User-Agent", "AI-Vibe-News/1.0 (by /u/giyer7)")
+                    append("Accept", "application/json")
+                    append("Accept-Language", "en-US,en;q=0.9")
                 }
             }
             
@@ -193,7 +230,7 @@ class ArticleService {
                         author = post.data.author,
                         publishedAt = LocalDateTime.ofEpochSecond(post.data.created_utc.toLong(), 0, java.time.ZoneOffset.UTC)
                             .format(DateTimeFormatter.ISO_DATE_TIME),
-                        source = "Reddit r/artificial",
+                        source = "Reddit r/artificialinteligence",
                         tags = listOf("AI", "Reddit"),
                         imageUrl = imageUrl,
                         url = "https://reddit.com${post.data.permalink}"

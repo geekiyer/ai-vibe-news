@@ -31,6 +31,7 @@ dependencies {
     implementation("io.ktor:ktor-server-cors-jvm:2.3.8")
     implementation("io.ktor:ktor-server-compression-jvm:2.3.8")
     implementation("io.ktor:ktor-server-caching-headers-jvm:2.3.8")
+    implementation("com.h2database:h2:2.2.224")
     testImplementation("io.ktor:ktor-server-tests-jvm")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.9.22")
 }
@@ -40,7 +41,11 @@ application {
 }
 
 tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "17"
+    kotlinOptions.jvmTarget = "21"
+}
+
+tasks.withType<JavaCompile> {
+    targetCompatibility = "21"
 }
 
 tasks {

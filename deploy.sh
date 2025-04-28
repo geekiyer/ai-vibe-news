@@ -10,7 +10,7 @@ mkdir -p deploy
 
 # Copy the JAR and configuration files
 echo "Copying files to deployment directory..."
-cp build/libs/vibeai-news.jar deploy/
+cp build/libs/ai-vibeai-news-all.jar deploy/
 cp src/main/resources/application.conf deploy/
 
 # Create systemd service file
@@ -24,7 +24,7 @@ After=network.target
 Type=simple
 User=www-data
 WorkingDirectory=/var/www/vibeai.news
-ExecStart=/usr/bin/java -jar /var/www/vibeai.news/vibeai-news.jar
+ExecStart=/usr/bin/java -jar /var/www/vibeai.news/ai-vibeai-news-all.jar
 Restart=always
 
 [Install]

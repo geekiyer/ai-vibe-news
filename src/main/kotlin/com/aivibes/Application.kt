@@ -10,6 +10,7 @@ import io.ktor.server.engine.*
 import io.ktor.server.html.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
@@ -27,6 +28,13 @@ fun main() {
 
 fun Application.configureRouting(database: DatabaseFactory, articleService: ArticleService) {
     routing {
+        get("/health") {
+            call.respond(mapOf(
+                "status" to "healthy",
+                "version" to "1.0.0",
+                "timestamp" to System.currentTimeMillis()
+            ))
+        }
         get("/") {
             val articles = runBlocking { articleService.fetchLatestArticles() }
             call.respondHtmlTemplate(HomePage(articles)) {}
