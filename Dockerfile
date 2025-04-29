@@ -1,8 +1,8 @@
-FROM openjdk:21-slim
+FROM eclipse-temurin:21-jre-alpine
 
 WORKDIR /app
 
-COPY build/libs/ai-vibe-news-all.jar app.jar
+COPY /app/build/libs/ai-vibe-news-all.jar app.jar
 
 EXPOSE 8080
 
