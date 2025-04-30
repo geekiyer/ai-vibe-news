@@ -1,5 +1,9 @@
 package com.aivibes.services
 
+import com.aivibes.api.HackerNewsClient
+import com.aivibes.api.models.DevToArticle
+import com.aivibes.api.models.MediumItem
+import com.aivibes.api.models.RedditResponse
 import com.aivibes.models.Article
 import io.ktor.client.*
 import io.ktor.client.call.*
@@ -26,6 +30,8 @@ class ArticleService {
             })
         }
     }
+
+    private val hackerNewsClient = HackerNewsClient()
 
     // Rate limiting for Reddit API
     private val redditRequestCount = AtomicInteger(0)
@@ -66,7 +72,7 @@ class ArticleService {
             // Launch all fetches in parallel
             val hackerNewsDeferred = async { 
                 try {
-                    val hackernewsArticles = fetchHackerNewsArticles()
+                    val hackernewsArticles = hackerNewsClient.fetchArticles()
                     println("✓ Hacker News: ${hackernewsArticles.size} articles")
                     hackernewsArticles
                 } catch (e: Exception) {
@@ -96,7 +102,7 @@ class ArticleService {
                     emptyList()
                 }
             }
-            
+
             val mediumDeferred = async {
                 try {
                     val mediumArticles = fetchMediumArticles()
@@ -108,42 +114,16 @@ class ArticleService {
                 }
             }
             
-            // Wait for all fetches to complete and combine results
+            // Wait for all fetches to complete
             val results = awaitAll(hackerNewsDeferred, devToDeferred, redditDeferred, mediumDeferred)
-            articles.addAll(results.flatten())
             
-            println("=== Total Articles: ${articles.size} ===\n")
-            articles.sortedByDescending { it.publishedAt }
-        }
-    }
-
-    private suspend fun fetchHackerNewsArticles(): List<Article> {
-        return try {
-            val storyIds = client.get("https://hacker-news.firebaseio.com/v0/topstories.json").body<List<Int>>()
+            // Combine all articles
+            results.forEach { articles.addAll(it) }
             
-            storyIds.take(15).mapNotNull { storyId ->
-                val story = client.get("https://hacker-news.firebaseio.com/v0/item/$storyId.json").body<HackerNewsStory>()
-                
-                if (story.title.contains("AI", ignoreCase = true) || 
-                    story.title.contains("vibe", ignoreCase = true) ||
-                    story.title.contains("coding", ignoreCase = true)) {
-                    Article(
-                        title = story.title,
-                        content = story.url ?: "",
-                        author = "Hacker News User",
-                        publishedAt = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME),
-                        source = "Hacker News",
-                        tags = listOf("AI", "Technology"),
-                        imageUrl = "https://picsum.photos/800/400?random=$storyId",
-                        url = story.url
-                    )
-                } else {
-                    null
-                }
-            }
-        } catch (e: Exception) {
-            println("Error in fetchHackerNewsArticles: ${e.message}")
-            emptyList()
+            println("=== Article Fetch Complete ===")
+            println("Total articles fetched: ${articles.size}")
+            
+            articles
         }
     }
 
@@ -183,23 +163,17 @@ class ArticleService {
 
     private suspend fun fetchRedditArticles(): List<Article> {
         return try {
-            println("Starting Reddit fetch...")
-            checkRedditRateLimit() // Check rate limit before making request
+            checkRedditRateLimit()
             
-            val response = client.get("https://www.reddit.com/r/artificialinteligence/top.json") {
+            val redditResponse = client.get("https://www.reddit.com/r/artificialinteligence/top.json") {
                 url {
                     parameters.append("limit", "15")
-                    parameters.append("t", "day") // Get top posts from today
+                    parameters.append("t", "day")
                 }
                 headers {
-                    append("User-Agent", "AI-Vibe-News/1.0 (by /u/giyer7)")
-                    append("Accept", "application/json")
-                    append("Accept-Language", "en-US,en;q=0.9")
+                    append("User-Agent", "AI-Vibe-News/1.0")
                 }
-            }
-            
-            val redditResponse = response.body<RedditResponse>()
-            println("Raw Reddit response: ${redditResponse.data.children.size} posts found")
+            }.body<RedditResponse>()
             
             val articles = redditResponse.data.children.mapNotNull { post ->
                 try {
@@ -339,68 +313,4 @@ class ArticleService {
             emptyList()
         }
     }
-}
-
-@kotlinx.serialization.Serializable
-private data class HackerNewsStory(
-    val id: Int,
-    val title: String,
-    val url: String?,
-    val by: String,
-    val time: Long
-)
-
-@kotlinx.serialization.Serializable
-private data class DevToArticle(
-    val title: String,
-    val body_markdown: String? = null,
-    val description: String? = null,
-    val published_at: String,
-    val user: DevToUser,
-    val tag_list: List<String>,
-    val cover_image: String? = null,
-    val path: String
-)
-
-@kotlinx.serialization.Serializable
-private data class DevToUser(
-    val name: String
-)
-
-@kotlinx.serialization.Serializable
-private data class RedditResponse(
-    val data: RedditData
-)
-
-@kotlinx.serialization.Serializable
-private data class RedditData(
-    val children: List<RedditPost>
-)
-
-@kotlinx.serialization.Serializable
-private data class RedditPost(
-    val data: RedditPostData
-)
-
-@kotlinx.serialization.Serializable
-private data class RedditPostData(
-    val id: String,
-    val title: String,
-    val selftext: String,
-    val author: String,
-    val created_utc: Double,
-    val permalink: String,
-    val thumbnail: String,
-    val url: String? = null
-)
-
-@kotlinx.serialization.Serializable
-private data class MediumItem(
-    val title: String,
-    val description: String,
-    val author: String,
-    val pubDate: String,
-    val link: String,
-    val thumbnail: String?,
-    val guid: String
-) 
+} 
