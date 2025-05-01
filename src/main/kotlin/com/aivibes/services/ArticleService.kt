@@ -1,9 +1,9 @@
 package com.aivibes.services
 
-import com.aivibes.api.DevToClient
-import com.aivibes.api.HackerNewsClient
-import com.aivibes.api.MediumClient
-import com.aivibes.api.RedditClient
+import com.aivibes.api.client.DevToClient
+import com.aivibes.api.client.HackerNewsClient
+import com.aivibes.api.client.MediumClient
+import com.aivibes.api.client.RedditClient
 import com.aivibes.models.Article
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll

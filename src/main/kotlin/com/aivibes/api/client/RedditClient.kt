@@ -1,46 +1,19 @@
-package com.aivibes.api
+package com.aivibes.api.client
 
 import com.aivibes.api.models.RedditResponse
 import com.aivibes.models.Article
-import io.ktor.client.*
 import io.ktor.client.call.*
-import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.contentnegotiation.*
-import io.ktor.client.plugins.logging.*
 import io.ktor.client.request.*
-import io.ktor.serialization.kotlinx.json.*
 import kotlinx.coroutines.delay
-import kotlinx.serialization.json.Json
 import java.time.LocalDateTime
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
 class RedditClient {
     companion object {
-        private val client: HttpClient by lazy {
-            HttpClient(CIO) {
-                install(ContentNegotiation) {
-                    json(Json {
-                        ignoreUnknownKeys = true
-                        isLenient = true
-                    })
-                }
-                install(Logging) {
-                    level = LogLevel.INFO
-                }
-                engine {
-                    maxConnectionsCount = 1000
-                    endpoint {
-                        maxConnectionsPerRoute = 100
-                        pipelineMaxSize = 20
-                        keepAliveTime = 5000
-                        connectTimeout = 5000
-                        requestTimeout = 15000
-                    }
-                }
-            }
-        }
+        private val client = HttpClientFactory.client
 
         // Rate limiting for Reddit API
         private val redditRequestCount = AtomicInteger(0)
@@ -114,7 +87,7 @@ class RedditClient {
                         title = post.data.title,
                         content = content,
                         author = post.data.author,
-                        publishedAt = LocalDateTime.ofEpochSecond(post.data.created_utc.toLong(), 0, java.time.ZoneOffset.UTC)
+                        publishedAt = LocalDateTime.ofEpochSecond(post.data.created_utc.toLong(), 0, ZoneOffset.UTC)
                             .format(DateTimeFormatter.ISO_DATE_TIME),
                         source = "Reddit r/artificialinteligence",
                         tags = listOf("AI", "Reddit"),
