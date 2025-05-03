@@ -1,6 +1,7 @@
 package com.aivibes.templates
 
 import com.aivibes.models.Article
+import io.ktor.http.*
 import io.ktor.server.html.*
 import kotlinx.html.*
 
@@ -9,11 +10,10 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
         head {
             title { +"vibeai.news - Your Daily AI News Hub" }
             meta { name = "viewport"; content = "width=device-width, initial-scale=1.0" }
-            link {
-                rel = "icon"
-                type = "image/svg+xml"
-                href = "/static/favicon.svg"
-            }
+            link(rel="apple-touch-icon", href="/apple-touch-icon.png", type=ContentType.Image.PNG.toString())
+            link(rel="icon", href="/favicon-16x16.png", type=ContentType.Image.PNG.toString())
+            link(rel="icon", href="/favicon-32x32.png", type=ContentType.Image.PNG.toString())
+            link(rel="manifest", href="/site.webmanifest")
             link {
                 rel = "stylesheet"
                 href = "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
@@ -24,17 +24,14 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
             }
             style {
                 +"""
-                    .logo-text {
-                        color: #1E40AF;
-                        font-weight: 700;
-                    }
                     .logo-icon {
-                        background: linear-gradient(135deg, #1E40AF 0%, #EA580C 100%);
-                        -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h10v4H7V7zm0 6h10v4H7v-4z'/%3E%3C/svg%3E") no-repeat center;
-                        mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 3h18v18H3V3zm16 16V5H5v14h14zM7 7h10v4H7V7zm0 6h10v4H7v-4z'/%3E%3C/svg%3E") no-repeat center;
-                    }
-                    .accent-text {
-                        color: #EA580C;
+                        width: 250px;
+                        height: 100px;
+                        background-image: url('/logo.png');
+                        background-size: contain;
+                        background-repeat: no-repeat;
+                        background-position: center;
+                        border-radius: 1px;
                     }
                 """
             }
@@ -42,17 +39,11 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
         body {
             div(classes = "min-h-screen bg-gray-50") {
                 // Header
-                header(classes = "bg-white text-white shadow-md") {
+                header(classes = "bg-gray-800 text-white shadow-md") {
                     div(classes = "container mx-auto px-4 py-6") {
                         div(classes = "flex items-center justify-center space-x-4") {
                             div(classes = "logo-icon w-10 h-10") {}
-                            h1(classes = "text-4xl font-bold") {
-                                span(classes = "logo-text") { +"vibe" }
-                                span(classes = "accent-text") { +"ai" }
-                                span(classes = "logo-text") { +".news" }
-                            }
                         }
-                        p(classes = "text-center text-gray-600 mt-2 text-xl") { +"Your Daily AI News Hub" }
                     }
                 }
 
@@ -101,7 +92,7 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
                 // Footer
                 footer(classes = "bg-gray-800 text-white py-8 mt-12") {
                     div(classes = "container mx-auto px-4 text-center") {
-                        div(classes = "flex items-center justify-center space-x-2 mb-4") {
+                        div(classes = "flex flex-col items-center space-y-2 mb-4") {
                             div(classes = "logo-icon w-6 h-6") {}
                             p(classes = "text-sm") { +"© 2024 vibeai.news. All rights reserved." }
                         }

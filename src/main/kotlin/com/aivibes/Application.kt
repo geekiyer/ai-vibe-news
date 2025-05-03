@@ -19,7 +19,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import mu.KotlinLogging
-import java.io.File
 
 private val logger = KotlinLogging.logger {}
 
@@ -46,12 +45,8 @@ fun Application.configureRouting(database: DatabaseFactory, articleService: Arti
     install(CachingHeaders)
     
     routing {
-        staticResources("/static", "static")
-        
-        get("/favicon.svg") {
-            val resource = javaClass.classLoader.getResource("static/favicon.svg")
-                ?: throw Exception("Favicon not found")
-            call.respondFile(File(resource.file))
+        static("/") {
+            resources("static")
         }
 
         get("/health") {
@@ -76,7 +71,20 @@ fun Application.configureRouting(database: DatabaseFactory, articleService: Arti
                 throw e
             }
         }
-        
+
+//        get("/") {
+//            call.respondHtml {
+//                head {
+//                    title("Demo")
+//                    link(rel="apple-touch-icon", href="/apple-touch-icon.png", type=ContentType.Image.PNG.toString())
+//                    link(rel="icon", href="/favicon-16x16.png", type=ContentType.Image.PNG.toString())
+//                    link(rel="icon", href="/favicon-32x32.png", type=ContentType.Image.PNG.toString())
+//                    link(rel="manifest", href="/site.webmanifest")
+//                }
+//                body { h1 { +"Hello, world!" } }
+//            }
+//        }
+
         articleRoutes(database)
     }
 }
