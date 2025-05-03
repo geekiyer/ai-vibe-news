@@ -22,6 +22,10 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
                 rel = "stylesheet"
                 href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
             }
+            link {
+                rel = "stylesheet"
+                href = "/styles.css"
+            }
             style {
                 +"""
                     .logo-icon {
@@ -57,11 +61,7 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
                     } else {
                         div(classes = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6") {
                             articles.forEach { article ->
-                                a(
-                                    classes = "block bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 transform hover:-translate-y-1",
-                                    href = article.url ?: article.content,
-                                    target = "_blank"
-                                ) {
+                                div(classes = "bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 transform hover:-translate-y-1") {
                                     img(
                                         classes = "w-full h-48 object-cover",
                                         src = article.imageUrl ?: "https://picsum.photos/800/400?random=${article.title.hashCode()}",
@@ -77,9 +77,15 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
                                             span(classes = "text-blue-600") { +article.getFormattedPublishedTime() }
                                         }
                                         p(classes = "text-gray-700 mb-4 line-clamp-3") { +article.content.take(200).plus("...") }
-                                        div(classes = "flex flex-wrap gap-2") {
+                                        div(classes = "flex flex-wrap gap-2 mb-4") {
                                             article.tags.take(3).forEach { tag ->
                                                 span(classes = "px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full") { +tag }
+                                            }
+                                        }
+                                        div(classes = "flex justify-end") {
+                                            button(classes = "share-button") {
+                                                onClick = "openShareModal('${article.title.replace("'", "\\'")}', '${article.imageUrl ?: "https://picsum.photos/800/400?random=${article.title.hashCode()}"}')"
+                                                i(classes = "fas fa-share-alt")
                                             }
                                         }
                                     }
@@ -107,6 +113,24 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
                                 i(classes = "fab fa-linkedin text-xl")
                             }
                         }
+                    }
+                }
+            }
+            script(src = "/share.js") {}
+            div(classes = "modal-overlay hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50") {
+                div(classes = "modal-content bg-white rounded-lg shadow-lg p-6 relative max-w-md w-full") {
+                    button(classes = "close-button absolute top-2 right-2 text-gray-500 hover:text-gray-700") {
+                        onClick = "closeShareModal()"
+                        +"×"
+                    }
+                    div(classes = "share-preview") {
+                        img(classes = "share-preview-image", src = "", alt = "")
+                        h4(classes = "share-preview-title") { }
+                        p(classes = "share-preview-domain") { +"vibeai.news" }
+                    }
+                    button(classes = "copy-button mt-4") {
+                        onClick = "copyShareLink(this)"
+                        +"Copy Link"
                     }
                 }
             }
