@@ -119,17 +119,21 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
             script(src = "/share.js") {}
             div(classes = "modal-overlay hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50") {
                 div(classes = "modal-content bg-white rounded-lg shadow-lg p-6 relative max-w-md w-full") {
-                    button(classes = "close-button absolute top-2 right-2 text-gray-500 hover:text-gray-700") {
+                    button(classes = "close-button absolute top-4 right-4") {
                         onClick = "closeShareModal()"
-                        +"×"
+                        i(classes = "fas fa-times fa-lg") {} // FontAwesome close icon
                     }
                     div(classes = "share-preview") {
                         img(classes = "share-preview-image", src = "", alt = "")
                         h4(classes = "share-preview-title") { }
-                        p(classes = "share-preview-domain") { +"vibeai.news" }
                     }
-                    button(classes = "copy-button mt-4") {
+                    input(classes = "share-url-input mt-4 mb-2 w-full", type = InputType.text) {
+                        readonly = true
+                        value = "" // Will be set by JS
+                    }
+                    button(classes = "copy-button w-full") {
                         onClick = "copyShareLink(this)"
+                        i(classes = "fas fa-copy mr-2") {}
                         +"Copy Link"
                     }
                 }

@@ -30,11 +30,27 @@ function openShareModal(title, imageUrl) {
     modal.classList.remove('hidden');
     modal.querySelector('.share-preview-title').textContent = title;
     modal.querySelector('.share-preview-image').src = imageUrl;
+    modal.querySelector('.share-url-input').value = window.location.href;
 }
 
 function closeShareModal() {
     document.querySelector('.modal-overlay').classList.add('hidden');
 }
+
+// Close modal on Esc key
+document.addEventListener('keydown', function(event) {
+    const modal = document.querySelector('.modal-overlay');
+    if (!modal.classList.contains('hidden') && event.key === 'Escape') {
+        closeShareModal();
+    }
+});
+
+// Close modal when clicking outside modal-content
+document.querySelector('.modal-overlay').addEventListener('click', function(event) {
+    if (event.target === this) {
+        closeShareModal();
+    }
+});
 
 function copyShareLink(button) {
     const modal = document.querySelector('.modal-overlay');
