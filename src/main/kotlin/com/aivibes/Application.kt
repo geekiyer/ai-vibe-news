@@ -72,19 +72,6 @@ fun Application.configureRouting(database: DatabaseFactory, articleService: Arti
             }
         }
 
-//        get("/") {
-//            call.respondHtml {
-//                head {
-//                    title("Demo")
-//                    link(rel="apple-touch-icon", href="/apple-touch-icon.png", type=ContentType.Image.PNG.toString())
-//                    link(rel="icon", href="/favicon-16x16.png", type=ContentType.Image.PNG.toString())
-//                    link(rel="icon", href="/favicon-32x32.png", type=ContentType.Image.PNG.toString())
-//                    link(rel="manifest", href="/site.webmanifest")
-//                }
-//                body { h1 { +"Hello, world!" } }
-//            }
-//        }
-
         articleRoutes(database)
     }
 }
