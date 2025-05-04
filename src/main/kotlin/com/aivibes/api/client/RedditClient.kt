@@ -1,19 +1,27 @@
 package com.aivibes.api.client
 
 import com.aivibes.api.models.RedditResponse
+import com.aivibes.api.models.RedditTokenResponse
 import com.aivibes.models.Article
 import io.ktor.client.call.*
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.*
+import io.ktor.http.*
 import kotlinx.coroutines.delay
 import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 class RedditClient {
     companion object {
         private val client = HttpClientFactory.client
+
+        @Volatile private var cachedToken: String? = null
+        private val tokenExpiry = AtomicLong(0L)
 
         // Rate limiting for Reddit API
         private val redditRequestCount = AtomicInteger(0)
@@ -46,16 +54,46 @@ class RedditClient {
         }
     }
 
+    private suspend fun getAccessToken(): String {
+        val now = System.currentTimeMillis()
+        // If token is valid for at least 1 more minute, reuse it
+        if (cachedToken != null && now < tokenExpiry.get() - 60_000) {
+            return cachedToken!!
+        }
+        // Otherwise, fetch a new token
+        val clientId = System.getenv("REDDIT_CLIENT_ID") ?: "YOUR_CLIENT_ID"
+        val clientSecret = System.getenv("REDDIT_CLIENT_SECRET") ?: "YOUR_CLIENT_SECRET"
+
+        val response: RedditTokenResponse = client.submitForm(
+            url = "https://www.reddit.com/api/v1/access_token",
+            formParameters = Parameters.build {
+                append("grant_type", "client_credentials")
+            }
+        ) {
+            headers {
+                append(HttpHeaders.Authorization, "Basic " + Base64.getEncoder()
+                    .encodeToString("$clientId:$clientSecret".toByteArray()))
+                append(HttpHeaders.UserAgent, "AI-Vibe-News/1.0")
+            }
+        }.body()
+
+        cachedToken = response.access_token
+        tokenExpiry.set(now + response.expires_in * 1000L)
+        return cachedToken!!
+    }
+
     suspend fun fetchArticles(): List<Article> {
         return try {
             checkRedditRateLimit()
-            
-            val redditResponse = client.get("https://www.reddit.com/r/artificialinteligence/top.json") {
+            val accessToken = getAccessToken()
+
+            val redditResponse = client.get("https://oauth.reddit.com/r/artificialinteligence/top.json") {
                 url {
                     parameters.append("limit", "15")
                     parameters.append("t", "day")
                 }
                 headers {
+                    append(HttpHeaders.Authorization, "Bearer $accessToken")
                     append("User-Agent", "AI-Vibe-News/1.0")
                 }
             }.body<RedditResponse>()

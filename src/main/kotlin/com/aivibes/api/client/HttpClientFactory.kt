@@ -17,7 +17,7 @@ object HttpClientFactory {
                 })
             }
             install(Logging) {
-                level = LogLevel.INFO
+                level = LogLevel.BODY
             }
             engine {
                 maxConnectionsCount = 1000

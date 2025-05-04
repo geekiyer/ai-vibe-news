@@ -76,18 +76,18 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
                                             span { +"•" }
                                             span(classes = "text-blue-600") { +article.getFormattedPublishedTime() }
                                         }
-                                        p(classes = "text-gray-700 mb-4 line-clamp-3") { +article.content.take(200).plus("...") }
+                                        // p(classes = "text-gray-700 mb-4 line-clamp-3") { +article.content.take(200).plus("...") }
                                         div(classes = "flex flex-wrap gap-2 mb-4") {
                                             article.tags.take(3).forEach { tag ->
                                                 span(classes = "px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full") { +tag }
                                             }
                                         }
-                                        div(classes = "flex justify-end") {
-                                            button(classes = "share-button") {
-                                                onClick = "openShareModal('${article.title.replace("'", "\\'")}', '${article.imageUrl ?: "https://picsum.photos/800/400?random=${article.title.hashCode()}"}')"
-                                                i(classes = "fas fa-share-alt")
-                                            }
-                                        }
+//                                        div(classes = "flex justify-end") {
+//                                            button(classes = "share-button") {
+//                                                onClick = "openShareModal('${article.title.replace("'", "\\'")}', '${article.imageUrl ?: "https://picsum.photos/800/400?random=${article.title.hashCode()}"}')"
+//                                                i(classes = "fas fa-share-alt")
+//                                            }
+//                                        }
                                     }
                                 }
                             }
