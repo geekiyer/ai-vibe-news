@@ -61,13 +61,13 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
                     } else {
                         div(classes = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6") {
                             articles.forEach { article ->
-                                div(classes = "bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 transform hover:-translate-y-1") {
+                                div(classes = "bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 transform hover:-translate-y-1 flex flex-col h-full") {
                                     img(
                                         classes = "w-full h-48 object-cover",
                                         src = article.imageUrl ?: "https://picsum.photos/800/400?random=${article.title.hashCode()}",
                                         alt = article.title
                                     )
-                                    div(classes = "p-6") {
+                                    div(classes = "p-6 flex-grow flex flex-col") {
                                         h3(classes = "text-xl font-semibold mb-2 text-gray-900") { +article.title }
                                         div(classes = "flex flex-wrap gap-2 text-sm text-gray-600 mb-3") {
                                             span { +"By ${article.author}" }
@@ -82,17 +82,21 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
                                                 span(classes = "px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full") { +tag }
                                             }
                                         }
-                                        // Add share buttons and counts
-                                        div(classes = "flex items-center gap-2 mt-2") {
+                                    }
+                                    // Share buttons container - fixed at bottom
+                                    div(classes = "px-6 pb-4 mt-auto border-t border-gray-100 pt-4") {
+                                        div(classes = "flex items-center justify-between") {
                                             val articleId = article.title.hashCode().toString()
                                             listOf("twitter", "linkedin", "facebook").forEach { platform ->
-                                                button(classes = "share-btn", type = ButtonType.button) {
-                                                    onClick = "shareTo('$platform', '${article.title.replace("'", "\\'")}', '${article.url ?: ""}', '$articleId', this)"
-                                                    i(classes = "fab fa-${platform}") {}
-                                                }
-                                                span(classes = "share-count") {
-                                                    id = "share-count-$articleId-$platform"
-                                                    +"0"
+                                                div(classes = "flex items-center gap-1") {
+                                                    button(classes = "share-btn hover:text-blue-500 transition-colors", type = ButtonType.button) {
+                                                        onClick = "shareTo('$platform', '${article.title.replace("'", "\\'")}', '${article.url ?: ""}', '$articleId', this)"
+                                                        i(classes = "fab fa-$platform text-lg") {}
+                                                    }
+                                                    span(classes = "text-sm text-gray-500") {
+                                                        id = "share-count-$articleId-$platform"
+                                                        +"0"
+                                                    }
                                                 }
                                             }
                                         }
