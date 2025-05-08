@@ -67,3 +67,40 @@ function copyShareLink(button) {
         console.error('Failed to copy text: ', err);
     });
 }
+
+async function fetchShareCounts() {
+    const res = await fetch('/api/share-counts');
+    const counts = await res.json();
+    for (const key in counts) {
+        const [articleId, platform] = key.split(':');
+        const el = document.getElementById(`share-count-${articleId}-${platform}`);
+        if (el) el.textContent = counts[key];
+    }
+}
+
+function shareTo(platform, title, url, articleId, btn) {
+    let shareUrl = '';
+    const encodedTitle = encodeURIComponent(title);
+    const encodedUrl = encodeURIComponent(url);
+
+    if (platform === 'twitter') {
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`;
+    } else if (platform === 'linkedin') {
+        shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`;
+    } else if (platform === 'facebook') {
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`;
+    }
+    window.open(shareUrl, '_blank', 'noopener,noreferrer,width=600,height=400');
+
+    // Increment share count
+    fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articleId, platform })
+    }).then(res => res.json()).then(data => {
+        const el = document.getElementById(`share-count-${articleId}-${platform}`);
+        if (el) el.textContent = data.count;
+    });
+}
+
+window.addEventListener('DOMContentLoaded', fetchShareCounts);

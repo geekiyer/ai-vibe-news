@@ -19,12 +19,26 @@ object Articles : Table() {
     override val primaryKey = PrimaryKey(id)
 }
 
+object ShareCounts : Table() {
+    val id = integer("id").autoIncrement()
+    val articleId = varchar("article_id", 255)
+    val platform = varchar("platform", 50)
+    val count = integer("count").default(0)
+    
+    override val primaryKey = PrimaryKey(id)
+    
+    init {
+        uniqueIndex(articleId, platform) // Ensure one count per article-platform combination
+    }
+}
+
 class DatabaseFactory {
     fun init() {
         Database.connect("jdbc:h2:mem:test;DB_CLOSE_DELAY=-1", driver = "org.h2.Driver")
 
         transaction {
             SchemaUtils.create(Articles)
+            SchemaUtils.create(ShareCounts)
         }
     }
 

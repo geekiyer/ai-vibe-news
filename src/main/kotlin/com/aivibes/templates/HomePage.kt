@@ -82,12 +82,20 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
                                                 span(classes = "px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full") { +tag }
                                             }
                                         }
-//                                        div(classes = "flex justify-end") {
-//                                            button(classes = "share-button") {
-//                                                onClick = "openShareModal('${article.title.replace("'", "\\'")}', '${article.imageUrl ?: "https://picsum.photos/800/400?random=${article.title.hashCode()}"}')"
-//                                                i(classes = "fas fa-share-alt")
-//                                            }
-//                                        }
+                                        // Add share buttons and counts
+                                        div(classes = "flex items-center gap-2 mt-2") {
+                                            val articleId = article.title.hashCode().toString()
+                                            listOf("twitter", "linkedin", "facebook").forEach { platform ->
+                                                button(classes = "share-btn", type = ButtonType.button) {
+                                                    onClick = "shareTo('$platform', '${article.title.replace("'", "\\'")}', '${article.url ?: ""}', '$articleId', this)"
+                                                    i(classes = "fab fa-${platform}") {}
+                                                }
+                                                span(classes = "share-count") {
+                                                    id = "share-count-$articleId-$platform"
+                                                    +"0"
+                                                }
+                                            }
+                                        }
                                     }
                                 }
                             }
@@ -116,12 +124,13 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
                     }
                 }
             }
+            // Add share.js script
             script(src = "/share.js") {}
             div(classes = "modal-overlay hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50") {
                 div(classes = "modal-content bg-white rounded-lg shadow-lg p-6 relative max-w-md w-full") {
                     button(classes = "close-button absolute top-4 right-4") {
                         onClick = "closeShareModal()"
-                        i(classes = "fas fa-times fa-lg") {} // FontAwesome close icon
+                        i(classes = "fas fa-times fa-lg") {}
                     }
                     div(classes = "share-preview") {
                         img(classes = "share-preview-image", src = "", alt = "")
@@ -129,7 +138,7 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
                     }
                     input(classes = "share-url-input mt-4 mb-2 w-full", type = InputType.text) {
                         readonly = true
-                        value = "" // Will be set by JS
+                        value = ""
                     }
                     button(classes = "copy-button w-full") {
                         onClick = "copyShareLink(this)"
