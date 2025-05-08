@@ -9,11 +9,39 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
     override fun HTML.apply() {
         head {
             title { +"vibeai.news - Your Daily AI News Hub" }
+            
+            // Standard meta tags
             meta { name = "viewport"; content = "width=device-width, initial-scale=1.0" }
+            meta { name = "description"; content = "Stay updated with the latest AI news, curated from top sources worldwide." }
+            meta { charset = "UTF-8" }
+            
+            // Open Graph meta tags
+            meta { attributes["property"] = "og:title"; content = "vibeai.news - Your Daily AI News Hub" }
+            meta { attributes["property"] = "og:description"; content = "Stay updated with the latest AI news, curated from top sources worldwide." }
+            meta { attributes["property"] = "og:type"; content = "website" }
+            meta { attributes["property"] = "og:url"; content = "https://vibeai.news" }
+            meta { attributes["property"] = "og:image"; content = "https://vibeai.news/logo.jpg" }
+            meta { attributes["property"] = "og:site_name"; content = "vibeai.news" }
+            
+            // Twitter Card meta tags
+            meta { name = "twitter:card"; content = "summary_large_image" }
+            meta { name = "twitter:title"; content = "vibeai.news - Your Daily AI News Hub" }
+            meta { name = "twitter:description"; content = "Stay updated with the latest AI news, curated from top sources worldwide." }
+            meta { name = "twitter:image"; content = "https://vibeai.news/logo.jpg" }
+            meta { name = "twitter:site"; content = "@vibeainews" } // Replace with your Twitter handle
+            
+            // Additional meta tags for SEO
+            meta { name = "author"; content = "vibeai.news" }
+            meta { name = "keywords"; content = "AI news, artificial intelligence, tech news, machine learning, deep learning" }
+            meta { name = "robots"; content = "index, follow" }
+            
+            // Favicon and app icons
             link(rel="apple-touch-icon", href="/apple-touch-icon.png", type=ContentType.Image.PNG.toString())
             link(rel="icon", href="/favicon-16x16.png", type=ContentType.Image.PNG.toString())
             link(rel="icon", href="/favicon-32x32.png", type=ContentType.Image.PNG.toString())
             link(rel="manifest", href="/site.webmanifest")
+            
+            // Stylesheets
             link {
                 rel = "stylesheet"
                 href = "https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
@@ -26,6 +54,8 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
                 rel = "stylesheet"
                 href = "/styles.css"
             }
+            
+            // Custom styles
             style {
                 +"""
                     .logo-icon {
