@@ -10,10 +10,11 @@ import java.time.format.DateTimeFormatter
 class HackerNewsClient {
     private val client = HttpClientFactory.client
 
-    suspend fun fetchArticles(): List<Article> {
+    suspend fun fetchArticles(startId: Int): List<Article> {
         return try {
             val storyIds = client.get("https://hacker-news.firebaseio.com/v0/topstories.json").body<List<Int>>()
             
+            var currentId = startId
             storyIds.take(15).mapNotNull { storyId ->
                 val story = client.get("https://hacker-news.firebaseio.com/v0/item/$storyId.json").body<HackerNewsStory>()
                 
@@ -21,6 +22,7 @@ class HackerNewsClient {
                     story.title.contains("vibe", ignoreCase = true) ||
                     story.title.contains("coding", ignoreCase = true)) {
                     Article(
+                        id = currentId++,
                         title = story.title,
                         content = story.url ?: "",
                         author = "Hacker News User",

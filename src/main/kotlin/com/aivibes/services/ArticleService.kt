@@ -4,78 +4,87 @@ import com.aivibes.api.client.DevToClient
 import com.aivibes.api.client.HackerNewsClient
 import com.aivibes.api.client.MediumClient
 import com.aivibes.api.client.RedditClient
+import com.aivibes.database.DatabaseFactory
 import com.aivibes.models.Article
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
 
 class ArticleService {
     private val hackerNewsClient = HackerNewsClient()
     private val mediumClient = MediumClient()
     private val redditClient = RedditClient()
     private val devToClient = DevToClient()
+    private val database = DatabaseFactory()
+
+    private val client = HttpClient(CIO) {
+        install(ContentNegotiation) {
+            json()
+        }
+    }
 
     suspend fun fetchLatestArticles(): List<Article> {
-        println("\n=== Starting Article Fetch ===")
-        
-        return coroutineScope {
-            val articles = mutableListOf<Article>()
-            
-            // Launch all fetches in parallel
-            val hackerNewsDeferred = async { 
-                try {
-                    val hackernewsArticles = hackerNewsClient.fetchArticles()
-                    println("✓ Hacker News: ${hackernewsArticles.size} articles")
-                    hackernewsArticles
-                } catch (e: Exception) {
-                    println("✗ Error fetching Hacker News articles: ${e.message}")
-                    emptyList()
-                }
-            }
-            
-            val devToDeferred = async {
-                try {
-                    val devToArticles = devToClient.fetchArticles()
-                    println("✓ Dev.to: ${devToArticles.size} articles")
-                    devToArticles
-                } catch (e: Exception) {
-                    println("✗ Error fetching Dev.to articles: ${e.message}")
-                    emptyList()
-                }
-            }
-            
-            val redditDeferred = async {
-                try {
-                    val redditArticles = redditClient.fetchArticles()
-                    println("✓ Reddit: ${redditArticles.size} articles")
-                    redditArticles
-                } catch (e: Exception) {
-                    println("✗ Error fetching Reddit articles: ${e.message}")
-                    emptyList()
-                }
-            }
+        val articles = mutableListOf<Article>()
+        var nextId = 1 // Start with ID 1
 
-            val mediumDeferred = async {
-                try {
-                    val mediumArticles = mediumClient.fetchArticles()
-                    println("✓ Medium: ${mediumArticles.size} articles")
-                    mediumArticles
-                } catch (e: Exception) {
-                    println("✗ Error fetching Medium articles: ${e.message}")
-                    emptyList()
-                }
+        // Fetch from Hacker News
+        try {
+            val hnArticles = hackerNewsClient.fetchArticles(nextId)
+            articles.addAll(hnArticles)
+            nextId += hnArticles.size
+            // Save to database
+            hnArticles.forEach { article ->
+                database.createArticle(article)
             }
-            
-            // Wait for all fetches to complete
-            val results = awaitAll(hackerNewsDeferred, devToDeferred, redditDeferred, mediumDeferred)
-            
-            // Combine all articles
-            results.forEach { articles.addAll(it) }
-            
-            println("=== Article Fetch Complete ===")
-            println("Total articles fetched: ${articles.size}")
-            
-            articles
+        } catch (e: Exception) {
+            println("Error fetching from Hacker News: ${e.message}")
         }
+
+        // Fetch from Dev.to
+        try {
+            val devToArticles = devToClient.fetchArticles(nextId)
+            articles.addAll(devToArticles)
+            nextId += devToArticles.size
+            // Save to database
+            devToArticles.forEach { article ->
+                database.createArticle(article)
+            }
+        } catch (e: Exception) {
+            println("Error fetching from Dev.to: ${e.message}")
+        }
+
+        // Fetch from Reddit
+        try {
+            val redditArticles = redditClient.fetchArticles(nextId)
+            articles.addAll(redditArticles)
+            nextId += redditArticles.size
+            // Save to database
+            redditArticles.forEach { article ->
+                database.createArticle(article)
+            }
+        } catch (e: Exception) {
+            println("Error fetching from Reddit: ${e.message}")
+        }
+
+        // Fetch from Medium
+        try {
+            val mediumArticles = mediumClient.fetchArticles(nextId)
+            articles.addAll(mediumArticles)
+            nextId += mediumArticles.size
+            // Save to database
+            mediumArticles.forEach { article ->
+                database.createArticle(article)
+            }
+        } catch (e: Exception) {
+            println("Error fetching from Medium: ${e.message}")
+        }
+
+        println("Total articles with IDs: ${articles.size}")
+        articles.forEach { article ->
+            println("Article ID: ${article.id}, Title: ${article.title}")
+        }
+
+        return articles.sortedByDescending { it.publishedAt }
     }
 } 

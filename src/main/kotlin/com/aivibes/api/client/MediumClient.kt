@@ -8,7 +8,7 @@ import io.ktor.client.request.*
 class MediumClient {
     private val client = HttpClientFactory.client
 
-    suspend fun fetchArticles(): List<Article> {
+    suspend fun fetchArticles(startId: Int): List<Article> {
         return try {
             println("Starting Medium fetch...")
             val rssContent = client.get("https://medium.com/feed/tag/artificial-intelligence") {
@@ -61,6 +61,7 @@ class MediumClient {
             
             println("Found ${items.size} Medium articles in RSS feed")
             
+            var currentId = startId
             val articles = items.mapNotNull { item ->
                 try {
                     println("Processing Medium article: ${item.title}")
@@ -75,6 +76,7 @@ class MediumClient {
                     }
                     
                     Article(
+                        id = currentId++,
                         title = item.title,
                         content = content,
                         author = item.author,

@@ -8,7 +8,7 @@ import io.ktor.client.request.*
 class DevToClient {
     private val client = HttpClientFactory.client
 
-    suspend fun fetchArticles(): List<Article> {
+    suspend fun fetchArticles(startId: Int): List<Article> {
         return try {
             println("Starting Dev.to fetch...")
             val response = client.get("https://dev.to/api/articles") {
@@ -25,9 +25,11 @@ class DevToClient {
             val articles = response.body<List<DevToArticle>>()
             println("Found ${articles.size} Dev.to articles")
             
+            var currentId = startId
             articles.map { devToArticle ->
                 val content = devToArticle.body_markdown ?: devToArticle.description ?: "No content available"
                 Article(
+                    id = currentId++,
                     title = devToArticle.title,
                     content = content,
                     author = devToArticle.user.name,

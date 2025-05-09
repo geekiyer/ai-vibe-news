@@ -1,6 +1,12 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Local Run" type="GradleRunConfiguration" factoryName="Gradle">
     <ExternalSystemSettings>
+      <option name="env">
+        <map>
+          <entry key="REDDIT_CLIENT_ID" value="UZnuOpC7HVQK1AjpR0wMFQ" />
+          <entry key="REDDIT_CLIENT_SECRET" value="mKkcJJI0Qb4OGhm9I-ODzu8uo2Nk-w" />
+        </map>
+      </option>
       <option name="executionName" />
       <option name="externalProjectPath" value="$PROJECT_DIR$" />
       <option name="externalSystemIdString" value="GRADLE" />

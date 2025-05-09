@@ -82,7 +82,7 @@ class RedditClient {
         return cachedToken!!
     }
 
-    suspend fun fetchArticles(): List<Article> {
+    suspend fun fetchArticles(startId: Int): List<Article> {
         return try {
             checkRedditRateLimit()
             val accessToken = getAccessToken()
@@ -98,6 +98,7 @@ class RedditClient {
                 }
             }.body<RedditResponse>()
             
+            var currentId = startId
             val articles = redditResponse.data.children.mapNotNull { post ->
                 try {
                     val content = post.data.selftext.takeIf { it.isNotBlank() } ?: post.data.title
@@ -122,6 +123,7 @@ class RedditClient {
                     }
                     
                     Article(
+                        id = currentId++,
                         title = post.data.title,
                         content = content,
                         author = post.data.author,
@@ -133,11 +135,11 @@ class RedditClient {
                         url = "https://reddit.com${post.data.permalink}"
                     )
                 } catch (e: Exception) {
-                    println("Error processing Reddit post '${post.data.title}': ${e.message}")
+                    println("Error processing Reddit post: ${e.message}")
                     null
                 }
             }
-            println("Successfully processed ${articles.size} Reddit articles (${redditResponse.data.children.size - articles.size} filtered out)")
+            println("Successfully processed ${articles.size} Reddit articles")
             articles
         } catch (e: Exception) {
             println("Error in fetchRedditArticles: ${e.message}")

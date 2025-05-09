@@ -81,7 +81,8 @@ async function fetchShareCounts() {
 function shareTo(platform, title, url, articleId, btn) {
     let shareUrl = '';
     const encodedTitle = encodeURIComponent(title);
-    const encodedUrl = encodeURIComponent(url);
+    const shortUrl = `https://vibeai.news/a/${articleId}?utm_source=${platform}&utm_medium=social&utm_campaign=share`;
+    const encodedUrl = encodeURIComponent(shortUrl);
 
     if (platform === 'twitter') {
         shareUrl = `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}`;

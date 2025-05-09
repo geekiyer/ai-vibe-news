@@ -91,41 +91,41 @@ class HomePage(val articles: List<Article>) : Template<HTML> {
                     } else {
                         div(classes = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6") {
                             articles.forEach { article ->
-                                div(classes = "bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 transform hover:-translate-y-1 flex flex-col h-full") {
-                                    img(
-                                        classes = "w-full h-48 object-cover",
-                                        src = article.imageUrl ?: "https://picsum.photos/800/400?random=${article.title.hashCode()}",
-                                        alt = article.title
-                                    )
-                                    div(classes = "p-6 flex-grow flex flex-col") {
-                                        h3(classes = "text-xl font-semibold mb-2 text-gray-900") { +article.title }
-                                        div(classes = "flex flex-wrap gap-2 text-sm text-gray-600 mb-3") {
-                                            span { +"By ${article.author}" }
-                                            span { +"•" }
-                                            span { +article.source }
-                                            span { +"•" }
-                                            span(classes = "text-blue-600") { +article.getFormattedPublishedTime() }
-                                        }
-                                        // p(classes = "text-gray-700 mb-4 line-clamp-3") { +article.content.take(200).plus("...") }
-                                        div(classes = "flex flex-wrap gap-2 mb-4") {
-                                            article.tags.take(3).forEach { tag ->
-                                                span(classes = "px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full") { +tag }
+                                a(href = "/a/${article.id}", classes = "block") {
+                                    div(classes = "bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300 transform hover:-translate-y-1 flex flex-col h-full cursor-pointer") {
+                                        img(
+                                            classes = "w-full h-48 object-cover",
+                                            src = article.imageUrl ?: "https://picsum.photos/800/400?random=${article.title.hashCode()}",
+                                            alt = article.title
+                                        )
+                                        div(classes = "p-6 flex-grow flex flex-col") {
+                                            h3(classes = "text-xl font-semibold mb-2 text-gray-900") { +article.title }
+                                            div(classes = "flex flex-wrap gap-2 text-sm text-gray-600 mb-3") {
+                                                span { +"By ${article.author}" }
+                                                span { +"•" }
+                                                span { +article.source }
+                                                span { +"•" }
+                                                span(classes = "text-blue-600") { +article.getFormattedPublishedTime() }
+                                            }
+                                            div(classes = "flex flex-wrap gap-2 mb-4") {
+                                                article.tags.take(3).forEach { tag ->
+                                                    span(classes = "px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full") { +tag }
+                                                }
                                             }
                                         }
-                                    }
-                                    // Share buttons container - fixed at bottom
-                                    div(classes = "px-6 pb-4 mt-auto border-t border-gray-100 pt-4") {
-                                        div(classes = "flex items-center justify-between") {
-                                            val articleId = article.title.hashCode().toString()
-                                            listOf("twitter", "linkedin", "facebook").forEach { platform ->
-                                                div(classes = "flex items-center gap-1") {
-                                                    button(classes = "share-btn hover:text-blue-500 transition-colors", type = ButtonType.button) {
-                                                        onClick = "shareTo('$platform', '${article.title.replace("'", "\\'")}', '${article.url ?: ""}', '$articleId', this)"
-                                                        i(classes = "fab fa-$platform text-lg") {}
-                                                    }
-                                                    span(classes = "text-sm text-gray-500") {
-                                                        id = "share-count-$articleId-$platform"
-                                                        +"0"
+                                        div(classes = "px-6 pb-4 mt-auto border-t border-gray-100 pt-4") {
+                                            div(classes = "flex items-center justify-between") {
+                                                val articleId = article.id.toString()
+                                                listOf("twitter", "linkedin", "facebook").forEach { platform ->
+                                                    div(classes = "flex items-center gap-1") {
+                                                        button(classes = "share-btn hover:text-blue-500 transition-colors", type = ButtonType.button) {
+                                                            onClick = "event.preventDefault(); shareTo('$platform', '${article.title.replace("'", "\\'")}', '${article.url ?: ""}', '$articleId', this)"
+                                                            i(classes = "fab fa-$platform text-lg") {}
+                                                        }
+                                                        span(classes = "text-sm text-gray-500") {
+                                                            id = "share-count-$articleId-$platform"
+                                                            +"0"
+                                                        }
                                                     }
                                                 }
                                             }
